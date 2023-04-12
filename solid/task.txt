@@ -1,0 +1,101 @@
+Переписать класс ведения журнала регистрации с использованием паттернов.
+1. Добавить возможность записи различных типов сообщений в отдельные файлы.
+2. Добавить возможность добавления типов записей.
+3. Сократить количество используемых методов.
+
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Threading.Tasks;
+
+class CSharp
+{
+    public sealed class LoggerSingleton
+    {
+        private static LoggerSingleton _instance;
+        private static readonly string _file = "test.txt";
+        private LoggerSingleton() { }
+        public static LoggerSingleton GetInstance()
+        {
+            if (_instance == null)
+                _instance = new LoggerSingleton();
+            return _instance;
+        }
+        private static string NowDateTime()
+        {
+            return $"{DateTime.Now:MM/dd/yy H:mm:ss zzz}";
+        }
+        private static async Task WriteRecordAsync(string str)
+        {
+            using (StreamWriter sw = new StreamWriter(_file, append: true))
+            {
+                await sw.WriteLineAsync(str);
+            }
+        }
+        private static void WriteRecord(string str)
+        {
+            using (StreamWriter sw = new StreamWriter(_file, append: true))
+            {
+                sw.WriteLine(str);
+            }
+        }
+        public static void WriteMessage(string str)
+        {
+            try
+            {
+                WriteRecord($"[message]\t{NowDateTime()}\t{str}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"LoggerSingleton -> WriteMessage: { ex.Message}");
+            }
+        }
+        public static void WriteMessageAsync(string str)
+        {
+            try
+            {
+                _ = WriteRecordAsync($"[message]\t{NowDateTime()}\t{str}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"LoggerSingleton -> WriteMessageAsync: { ex.Message}");
+            }
+        }
+        public static void WriteError(string str)
+        {
+            try
+            {
+                WriteRecord($"[error]\t{NowDateTime()}\t{str}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"LoggerSingleton -> WriteError: { ex.Message}");
+            }
+        }
+        public static void WriteErrorAsync(string str)
+        {
+            try
+            {
+                _ = WriteRecordAsync($"[error]\t{NowDateTime()}\t{str}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"LoggerSingleton -> WriteErrorAsync: { ex.Message}");
+            }
+        }
+    }
+
+    static void Main()
+    {
+        LoggerSingleton.GetInstance();
+
+        for (var i = 0; i < 10; i++)
+        {
+            LoggerSingleton.WriteErrorAsync($"test {i}");
+        }
+
+        Console.WriteLine("< End >");
+        Console.ReadLine();
+    }
+
+}
